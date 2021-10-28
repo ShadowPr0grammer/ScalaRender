@@ -1,12 +1,11 @@
 package com
 
 import java.awt.Graphics2D
-import java.awt.event.{KeyEvent, KeyListener}
+import java.awt.event.{KeyAdapter, KeyEvent, KeyListener, MouseWheelEvent, MouseWheelListener}
 import javax.swing.{JFrame, WindowConstants}
-
 import KeyEvent._
 
-object Main extends KeyListener {
+object Main {
 
   def draw(g: Graphics2D): Unit = {
     Render3D.render()
@@ -18,7 +17,10 @@ object Main extends KeyListener {
     frame.setSize(Render3D.width, Render3D.height)
     frame.setUndecorated(false)
     frame.setTitle("Scala Render")
-    frame.addKeyListener(this)
+    frame.addKeyListener(new KeyAdapter {
+      override def keyPressed(e: KeyEvent): Unit = Main.keyPressed(e)
+    })
+    frame.addMouseWheelListener(Main.mouseWheelMoved)
     frame.setVisible(true)
     frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
     frame.createBufferStrategy(2)
@@ -37,15 +39,12 @@ object Main extends KeyListener {
     }
   }
 
-  override def keyTyped(e: KeyEvent): Unit = {
-
-  }
-
-  override def keyPressed(e: KeyEvent): Unit = {
+  def keyPressed(e: KeyEvent): Unit = {
     val d = moveDirection(e.getKeyCode)
-    if (e.isShiftDown) {
-      Render3D.rotation = Render3D.rotation + d * (math.Pi / 10)
-    } else Render3D.translation = Render3D.translation + d * 10
+    if (e.isAltDown) Render3D.light = Render3D.light + d * 5
+    else if (e.isControlDown) Render3D.translation = Render3D.translation + d * 5
+    else if (e.isShiftDown) Render3D.rotation = Render3D.rotation + d * (math.Pi / 20)
+    else Render3D.cameraCenter = Render3D.cameraCenter + d * 5
   }
 
   def moveDirection(code: Int): Vector3D = {
@@ -58,7 +57,5 @@ object Main extends KeyListener {
     Vector3D(0, 0, 0)
   }
 
-  override def keyReleased(e: KeyEvent): Unit = {
-
-  }
+  def mouseWheelMoved(e: MouseWheelEvent): Unit = Render3D.scale *= math.pow(1.1, -e.getWheelRotation)
 }

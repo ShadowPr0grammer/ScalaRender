@@ -19,7 +19,7 @@ class Obj {
 
   def getScaledTextureCoordinate(face: Array[Array[Int]], ind: Int): Vector2D = {
     val c = getTextureCoordinate(face, ind)
-    Vector2D(c.x * texture.getWidth, c.y * texture.getHeight)
+    Vector2D(c.x * texture.getWidth, (1 - c.y) * texture.getHeight)
   }
 
   def getNormal(face: Array[Array[Int]], ind: Int): Vector3D = normals(face(ind)(2) - 1)

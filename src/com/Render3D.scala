@@ -10,7 +10,7 @@ object Render3D {
   val height: Int = Toolkit.getDefaultToolkit.getScreenSize.height
   val image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
   val zBuffer: Array[Double] = Array.fill[Double](width * height)(Double.NegativeInfinity)
-  var light: Vector3D = Vector3D(0, 0, 1)
+  var light: Vector3D = Vector3D(0, 0, 10)
   var scale: Double = 1.0
   var translation: Vector3D = Vector3D(0, -width, -height / 2)
   var rotation: Vector3D = Vector3D(0, 0, 0)
@@ -57,11 +57,13 @@ object Render3D {
       image.setRGB(i % width, i / width, 0)
     }
     val center = obj.getCenter
+    val lightDirection = light.unit
     val eye: Vector3D = cameraCenter + Vector3D(cos(cameraEye.x) * cos(cameraEye.y),
       cos(cameraEye.x) * sin(cameraEye.y), sin(cameraEye.x)) * cameraDistance
     val modelMatrix = buildModelMatrix(scale, rotation, translation)
     val viewMatrix = buildViewMatrix(cameraCenter, eye, cameraAngle)
-    val projectionMatrix = buildProjectionMatrix((cameraCenter to eye).len)
+    val cameraDirection = cameraCenter to eye
+    val projectionMatrix = buildProjectionMatrix(cameraDirection.len)
     val nModelMatrix = modelMatrix.transpose.inverse
     val screenMatrix = projectionMatrix * viewMatrix
     val matrix = screenMatrix * modelMatrix
@@ -85,10 +87,11 @@ object Render3D {
       val bTexture = obj.getScaledTextureCoordinate(face, 1)
       val cTexture = obj.getScaledTextureCoordinate(face, 2)
       val normal = ((cWorld - aWorld) * (bWorld - aWorld)).unit
-      if (normal.cross(light) <= 0.5) {
+      if (normal.cross(cameraDirection) <= 0.5) {
         renderTriangle(aScreen, bScreen, cScreen, bar => {
           val color = new Color(obj.getRGB(aTexture * bar.x + bTexture * bar.y + cTexture * bar.z))
-          val normalLight = aWorldNormal.cross(light) * bar.x + bWorldNormal.cross(light) * bar.y + cWorldNormal.cross(light) * bar.z
+          val normalLight = aWorldNormal.cross(lightDirection) * bar.x +
+            bWorldNormal.cross(lightDirection) * bar.y + cWorldNormal.cross(lightDirection) * bar.z
           val l = max(normalLight, 0.2)
           new Color((color.getRed * l).toInt, (color.getGreen * l).toInt, (color.getBlue * l).toInt).getRGB
         })
